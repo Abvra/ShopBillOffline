@@ -3,40 +3,68 @@ name: Build ShopBill APK
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches:
+      - main
+
+permissions:
+  contents: read
 
 jobs:
   build:
+    name: Build Debug APK
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      # 1. Download repository source
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
+      # 2. Install Java 17
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '17'
 
+      # 3. Install Gradle
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '9.6'
+          gradle-version: '9.6.1'
 
+      # 4. Install Android SDK tools
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      # 5. Install required Android SDK packages
       - name: Install Android SDK packages
         run: |
-          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+          yes | sdkmanager --licenses || true
+          sdkmanager "platform-tools"
+          sdkmanager "platforms;android-35"
+          sdkmanager "build-tools;36.0.0"
 
+      # 6. Make Gradle executable
+      - name: Make Gradle executable
+        run: chmod +x ./gradlew || true
+
+      # 7. Build APK
       - name: Build debug APK
-        run: gradle :app:assembleDebug --stacktrace
+        run: |
+          gradle :app:assembleDebug --stacktrace
 
+      # 8. Verify APK exists
+      - name: Verify APK
+        run: |
+          echo "Checking generated APK..."
+          ls -lah app/build/outputs/apk/debug/
+          test -f app/build/outputs/apk/debug/app-debug.apk
+
+      # 9. Upload APK as GitHub artifact
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: ShopBill-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+          retention-days: 30

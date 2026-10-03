@@ -12,55 +12,43 @@ permissions:
 jobs:
   build:
     name: Build Debug APK
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
-      # 1. Download repository source
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      # 2. Install Java 17
       - name: Set up JDK 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
 
-      # 3. Install Gradle
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+      - name: Set up Gradle 9.6.1
+        uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: '9.6.1'
 
-      # 4. Install Android SDK tools
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
 
-      # 5. Install required Android SDK packages
       - name: Install Android SDK packages
         run: |
-          yes | sdkmanager --licenses || true
-          sdkmanager "platform-tools"
           sdkmanager "platforms;android-35"
           sdkmanager "build-tools;36.0.0"
 
-      # 6. Make Gradle executable
-      - name: Make Gradle executable
-        run: chmod +x ./gradlew || true
-
-      # 7. Build APK
-      - name: Build debug APK
+      - name: Build APK
         run: |
-          gradle :app:assembleDebug --stacktrace
+          gradle :app:assembleDebug --stacktrace --no-daemon
 
-      # 8. Verify APK exists
       - name: Verify APK
         run: |
-          echo "Checking generated APK..."
-          ls -lah app/build/outputs/apk/debug/
+          echo "Checking APK..."
+          ls -lh app/build/outputs/apk/debug/
           test -f app/build/outputs/apk/debug/app-debug.apk
 
-      # 9. Upload APK as GitHub artifact
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:

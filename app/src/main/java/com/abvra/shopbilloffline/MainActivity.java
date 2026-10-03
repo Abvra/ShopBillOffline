@@ -1,4 +1,8 @@
 package com.abvra.shopbilloffline;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Typeface;
 
 import android.Manifest;
 import android.app.Activity;
